@@ -1,0 +1,28 @@
+{
+  "$schema": "https://v2-8-13.turborepo.dev/schema.json",
+  "globalEnv": ["CI", "MERGE_DISABLE_SHARE"],
+  "globalPassThroughEnv": ["CI", "MERGE_DISABLE_SHARE"],
+  "tasks": {
+    "typecheck": {},
+    "build": {
+      "dependsOn": [],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "merge#test": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@merge-ai/app#test": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "@merge-ai/sync#dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

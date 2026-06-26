@@ -1,0 +1,73 @@
+#!/usr/bin/env node
+
+const childProcess = require("child_process")
+const fs = require("fs")
+const path = require("path")
+const os = require("os")
+
+function run(target) {
+  const result = childProcess.spawnSync(target, process.argv.slice(2), {
+    stdio: "inherit",
+  })
+  if (result.error) {
+    console.error(result.error.message)
+    process.exit(1)
+  }
+  process.exit(typeof result.status === "number" ? result.status : 0)
+}
+
+const envPath = process.env.SPRINT_BIN_PATH || process.env.OPENCODE_BIN_PATH
+if (envPath) {
+  run(envPath)
+}
+
+const scriptPath = fs.realpathSync(__filename)
+const scriptDir = path.dirname(scriptPath)
+const cached = path.join(scriptDir, ".sprint")
+if (fs.existsSync(cached)) {
+  run(cached)
+}
+
+const platformMap = {
+  darwin: "darwin",
+  linux: "linux",
+  win32: "windows",
+}
+const archMap = {
+  x64: "x64",
+  arm64: "arm64",
+  arm: "arm",
+}
+
+const platform = platformMap[os.platform()] || os.platform()
+const arch = archMap[os.arch()] || os.arch()
+const bases = [`sprint-${platform}-${arch}`, `opencode-${platform}-${arch}`]
+const binaries = platform === "windows" ? ["sprint.exe", "opencode.exe"] : ["sprint", "opencode"]
+
+function findBinary(startDir) {
+  let current = startDir
+  for (;;) {
+    const modules = path.join(current, "node_modules")
+    if (fs.existsSync(modules)) {
+      for (const base of bases) {
+        for (const binary of binaries) {
+          const candidate = path.join(modules, base, "bin", binary)
+          if (fs.existsSync(candidate)) return candidate
+        }
+      }
+    }
+    const parent = path.dirname(current)
+    if (parent === current) return
+    current = parent
+  }
+}
+
+const resolved = findBinary(scriptDir)
+if (!resolved) {
+  console.error(
+    "Sprint could not find an installed platform binary. Set SPRINT_BIN_PATH or reinstall dependencies.",
+  )
+  process.exit(1)
+}
+
+run(resolved)

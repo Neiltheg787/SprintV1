@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: merge-relay
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: MERGE_RELAY_URL
+        sync: false
